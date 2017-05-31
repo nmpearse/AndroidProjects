@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "810436390968",
+    "firebase_url": "https://newagent-a998c.firebaseio.com",
+    "project_id": "newagent-a998c",
+    "storage_bucket": "newagent-a998c.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:810436390968:android:ee08c36b483fb2b2",
+        "android_client_info": {
+          "package_name": "com.sumang.chatdemo"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "810436390968-vluhhma8ufpbv5vvc6v8ookgcco3tm5j.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.sumang.chatdemo",
+            "certificate_hash": "2c25a21c35a98731dde00630800826e3662e7c00"
+          }
+        },
+        {
+          "client_id": "810436390968-aj6d46mu1bs4h198osplrjhe7bvur2vk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCpoJsB33ZYGQA1hyCY_mq28EeAVXk0WmM"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "810436390968-aj6d46mu1bs4h198osplrjhe7bvur2vk.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
