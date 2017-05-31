@@ -45,6 +45,7 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
 import com.google.firebase.storage.FirebaseStorage;
@@ -76,12 +77,12 @@ public class MainActivity extends AppCompatActivity {
     private String mUsername;
 
     private FirebaseDatabase mFirebaseDatabase;
-    private DatabaseReference mDatabaseRef;
+    private DatabaseReference mMessageDatabaseRef;
+    private DatabaseReference mUsersDatabaseRef;
     private ChildEventListener mChildEventListener;
     private FirebaseAuth mFirebaseAuth;
     private FirebaseAuth.AuthStateListener mAuthStateListener;
     private FirebaseRemoteConfig mFirebaseRemoteConfig;
-
     private FirebaseStorage mFirebaseStorage;
     private StorageReference mChatStoreageRef;
 
@@ -103,9 +104,9 @@ public class MainActivity extends AppCompatActivity {
         mFirebaseAuth = FirebaseAuth.getInstance();
         mFirebaseStorage = FirebaseStorage.getInstance();
         mFirebaseRemoteConfig = FirebaseRemoteConfig.getInstance();
-        mDatabaseRef = mFirebaseDatabase.getReference().child("messages");
+        mMessageDatabaseRef = mFirebaseDatabase.getReference().child("chats");
         mChatStoreageRef = mFirebaseStorage.getReference().child("chat_photos");
-
+        mUsersDatabaseRef = mFirebaseDatabase.getReference().child("users");
         // Initialize message ListView and its adapter
         List<FriendlyMessage> friendlyMessages = new ArrayList<>();
         mMessageAdapter = new MessageAdapter(this, R.layout.item_message, friendlyMessages);
@@ -152,7 +153,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 // TODO: Send messages on click
                 FriendlyMessage message = new FriendlyMessage(mMessageEditText.getText().toString(),mUsername, null);
-                mDatabaseRef.push().setValue(message);
+                mMessageDatabaseRef.push().setValue(message);
                 // Clear input box
                 mMessageEditText.setText("");
             }
@@ -165,7 +166,8 @@ public class MainActivity extends AppCompatActivity {
                 FirebaseUser user = firebaseAuth.getCurrentUser();
                 if(user!=null)
                 {
-                    user.get
+                    Query mUserQuery = mUsersDatabaseRef.orderByChild("users").equalTo(user.getUid());
+                    mUsersDatabaseRef.child(user.getUid()).setValue(user);
                     onSignedInInitialize(user.getDisplayName());
                 }
                 else
@@ -231,14 +233,14 @@ public class MainActivity extends AppCompatActivity {
 
                 }
             };
-            mDatabaseRef.addChildEventListener(mChildEventListener);
+            mMessageDatabaseRef.addChildEventListener(mChildEventListener);
         }
     }
 
     private void detachDatabaseReadListener()
     {
         if(mChildEventListener !=null) {
-            mDatabaseRef.removeEventListener(mChildEventListener);
+            mMessageDatabaseRef.removeEventListener(mChildEventListener);
             mChildEventListener =null;
         }
     }
@@ -304,7 +306,7 @@ public class MainActivity extends AppCompatActivity {
                 public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
                   Uri downloadPhotoUrl = taskSnapshot.getDownloadUrl();
                     FriendlyMessage message = new FriendlyMessage(null, mUsername, downloadPhotoUrl.toString());
-                    mDatabaseRef.push().setValue(message);
+                    mMessageDatabaseRef.push().setValue(message);
                 }
             });
         }
