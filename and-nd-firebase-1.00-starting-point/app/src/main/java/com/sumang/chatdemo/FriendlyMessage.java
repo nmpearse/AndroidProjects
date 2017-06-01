@@ -15,35 +15,59 @@
  */
 package com.sumang.chatdemo;
 
+import java.util.Date;
+import java.util.Map;
+
 public class FriendlyMessage {
 
-    private String text;
-    private String name;
+    private String message;
+    private Date timeStamp;
     private String photoUrl;
+    private Map<String, Boolean> users;
+
+    public String getFromUserID() {
+        return fromUserID;
+    }
+
+    public void setFromUserID(String fromUserID) {
+        this.fromUserID = fromUserID;
+    }
+
+    public String getToUserID() {
+        return toUserID;
+    }
+
+    public void setToUserID(String toUserID) {
+        this.toUserID = toUserID;
+    }
+
+    private String fromUserID;
+    private String toUserID;
 
     public FriendlyMessage() {
     }
 
-    public FriendlyMessage(String text, String name, String photoUrl) {
-        this.text = text;
-        this.name = name;
+    public FriendlyMessage(String message, Date timeStamp, String photoUrl, Map<String, Boolean> users) {
+        this.message = message;
+        this.timeStamp = timeStamp;
         this.photoUrl = photoUrl;
+        this.users = users;
     }
 
-    public String getText() {
-        return text;
+    public String getMessage() {
+        return message;
     }
 
-    public void setText(String text) {
-        this.text = text;
+    public void setMessage(String message) {
+        this.message = message;
     }
 
-    public String getName() {
-        return name;
+    public Date getTimeStamp() {
+        return timeStamp;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setTimeStamp(Date timeStamp) {
+        this.timeStamp = timeStamp;
     }
 
     public String getPhotoUrl() {
@@ -52,5 +76,13 @@ public class FriendlyMessage {
 
     public void setPhotoUrl(String photoUrl) {
         this.photoUrl = photoUrl;
+    }
+
+    public Map<String, Boolean> getUsers() {
+        return users;
+    }
+
+    public void setUsers(Map<String, Boolean> users) {
+        this.users = users;
     }
 }

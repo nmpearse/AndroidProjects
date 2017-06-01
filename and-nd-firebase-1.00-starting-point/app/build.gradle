@@ -52,5 +52,6 @@ dependencies {
     compile 'com.google.firebase:firebase-storage:10.2.6'
     compile 'com.google.firebase:firebase-messaging:10.2.6'
     compile 'com.google.firebase:firebase-config:10.2.6'
+    compile 'com.android.support.constraint:constraint-layout:1.0.2'
 }
 apply plugin: 'com.google.gms.google-services'

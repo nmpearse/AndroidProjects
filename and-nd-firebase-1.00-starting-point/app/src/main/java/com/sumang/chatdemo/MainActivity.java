@@ -46,6 +46,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
+import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
 import com.google.firebase.storage.FirebaseStorage;
@@ -63,28 +64,20 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
 
     public static final String ANONYMOUS = "anonymous";
-    public static final String FRIENDLY_MSG_LENGTH_KEY="friendly_message_length";
-    public static final int DEFAULT_MSG_LENGTH_LIMIT = 1000;
-
-    private ListView mMessageListView;
-    private MessageAdapter mMessageAdapter;
+    private ListView mUserListView;
     private ProgressBar mProgressBar;
-    private ImageButton mPhotoPickerButton;
-    private EditText mMessageEditText;
-    private Button mSendButton;
     private static final int RC_SIGN_IN = 10;
     private static final int RC_PHOTO_PICKER = 2;
     private String mUsername;
 
     private FirebaseDatabase mFirebaseDatabase;
-    private DatabaseReference mMessageDatabaseRef;
     private DatabaseReference mUsersDatabaseRef;
     private ChildEventListener mChildEventListener;
     private FirebaseAuth mFirebaseAuth;
     private FirebaseAuth.AuthStateListener mAuthStateListener;
-    private FirebaseRemoteConfig mFirebaseRemoteConfig;
-    private FirebaseStorage mFirebaseStorage;
-    private StorageReference mChatStoreageRef;
+    private Query mUserListQuery;
+
+    private UserAdapter mUserAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,80 +88,33 @@ public class MainActivity extends AppCompatActivity {
 
         // Initialize references to views
         mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
-        mMessageListView = (ListView) findViewById(R.id.messageListView);
-        mPhotoPickerButton = (ImageButton) findViewById(R.id.photoPickerButton);
-        mMessageEditText = (EditText) findViewById(R.id.messageEditText);
-        mSendButton = (Button) findViewById(R.id.sendButton);
 
         mFirebaseDatabase = FirebaseDatabase.getInstance();
         mFirebaseAuth = FirebaseAuth.getInstance();
-        mFirebaseStorage = FirebaseStorage.getInstance();
-        mFirebaseRemoteConfig = FirebaseRemoteConfig.getInstance();
-        mMessageDatabaseRef = mFirebaseDatabase.getReference().child("chats");
-        mChatStoreageRef = mFirebaseStorage.getReference().child("chat_photos");
         mUsersDatabaseRef = mFirebaseDatabase.getReference().child("users");
-        // Initialize message ListView and its adapter
-        List<FriendlyMessage> friendlyMessages = new ArrayList<>();
-        mMessageAdapter = new MessageAdapter(this, R.layout.item_message, friendlyMessages);
-        mMessageListView.setAdapter(mMessageAdapter);
-
+        mUserListView = (ListView)findViewById(R.id.userListView);
+        List<User> userList = new ArrayList<>();
+        mUserAdapter = new UserAdapter(this, R.layout.item_user, userList);
+        mUserListView.setAdapter(mUserAdapter);
         // Initialize progress bar
-        mProgressBar.setVisibility(ProgressBar.INVISIBLE);
-
-        // ImagePickerButton shows an image picker to upload a image for a message
-        mPhotoPickerButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-                intent.setType("image/jpeg");
-                intent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
-                startActivityForResult(Intent.createChooser(intent, "Complete action using"), RC_PHOTO_PICKER);
-            }
-        });
-
-        // Enable Send button when there's text to send
-        mMessageEditText.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-            }
-
-            @Override
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                if (charSequence.toString().trim().length() > 0) {
-                    mSendButton.setEnabled(true);
-                } else {
-                    mSendButton.setEnabled(false);
-                }
-            }
-
-            @Override
-            public void afterTextChanged(Editable editable) {
-            }
-        });
-        mMessageEditText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(DEFAULT_MSG_LENGTH_LIMIT)});
-
-        // Send button sends a message and clears the EditText
-        mSendButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                // TODO: Send messages on click
-                FriendlyMessage message = new FriendlyMessage(mMessageEditText.getText().toString(),mUsername, null);
-                mMessageDatabaseRef.push().setValue(message);
-                // Clear input box
-                mMessageEditText.setText("");
-            }
-        });
+        mProgressBar.setVisibility(ProgressBar.VISIBLE);
 
 
         mAuthStateListener = new FirebaseAuth.AuthStateListener() {
             @Override
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
-                FirebaseUser user = firebaseAuth.getCurrentUser();
-                if(user!=null)
+                final FirebaseUser mFirebaseUser = firebaseAuth.getCurrentUser();
+                if(mFirebaseUser!=null)
                 {
-                    Query mUserQuery = mUsersDatabaseRef.orderByChild("users").equalTo(user.getUid());
-                    mUsersDatabaseRef.child(user.getUid()).setValue(user);
-                    onSignedInInitialize(user.getDisplayName());
+                    mUsersDatabaseRef.orderByChild("users").equalTo(mFirebaseUser.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
+                            setUserDetails(dataSnapshot.getValue(User.class), mFirebaseUser);
+                        }
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) {}
+                    });
+                    onSignedInInitialize(mFirebaseUser.getDisplayName());
                 }
                 else
                 {
@@ -181,16 +127,30 @@ public class MainActivity extends AppCompatActivity {
                                     .setIsSmartLockEnabled(false)
                                     .build(),
                             RC_SIGN_IN);
-
                 }
             }
         };
-        FirebaseRemoteConfigSettings configSettings = new FirebaseRemoteConfigSettings.Builder().setDeveloperModeEnabled(BuildConfig.DEBUG).build();
-        mFirebaseRemoteConfig.setConfigSettings(configSettings);
-        Map<String, Object> defaultConfig = new HashMap<>();
-        defaultConfig.put(FRIENDLY_MSG_LENGTH_KEY, DEFAULT_MSG_LENGTH_LIMIT);
-        mFirebaseRemoteConfig.setDefaults(defaultConfig);
-        fetchConfig();
+
+        mProgressBar.setVisibility(ProgressBar.INVISIBLE);
+    }
+    boolean newUser = false;
+    User userDtls;
+    public void setUserDetails(User user, FirebaseUser mFirebaseUser)
+    {
+        this.userDtls = user;
+        if(userDtls==null)
+        {
+            newUser = true;
+            userDtls = new User();
+            userDtls.setDisplayName(mFirebaseUser.getDisplayName());
+            userDtls.setEmailID(mFirebaseUser.getEmail());
+            userDtls.setId(mFirebaseUser.getUid());
+            mUsersDatabaseRef.child(mFirebaseUser.getUid()).setValue(userDtls);
+        }else
+        {
+            newUser = false;
+        }
+        Util.currentUser = userDtls;
     }
 
     private void onSignedInInitialize(String displayName) {
@@ -201,7 +161,7 @@ public class MainActivity extends AppCompatActivity {
     private void onSignedOutCleanUp()
     {
         mUsername = ANONYMOUS;
-        mMessageAdapter.clear();
+        mUserAdapter.clear();
     }
 
     private void attachDatabaseReadListener()
@@ -210,7 +170,7 @@ public class MainActivity extends AppCompatActivity {
             mChildEventListener = new ChildEventListener() {
                 @Override
                 public void onChildAdded(DataSnapshot dataSnapshot, String s) {
-                    mMessageAdapter.add(dataSnapshot.getValue(FriendlyMessage.class));
+                    mUserAdapter.add(dataSnapshot.getValue(User.class));
                 }
 
                 @Override
@@ -233,14 +193,14 @@ public class MainActivity extends AppCompatActivity {
 
                 }
             };
-            mMessageDatabaseRef.addChildEventListener(mChildEventListener);
+            mUsersDatabaseRef.addChildEventListener(mChildEventListener);
         }
     }
 
     private void detachDatabaseReadListener()
     {
         if(mChildEventListener !=null) {
-            mMessageDatabaseRef.removeEventListener(mChildEventListener);
+            mUsersDatabaseRef.removeEventListener(mChildEventListener);
             mChildEventListener =null;
         }
     }
@@ -249,6 +209,7 @@ public class MainActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.main_menu, menu);
+
         return true;
     }
 
@@ -270,6 +231,7 @@ public class MainActivity extends AppCompatActivity {
         mFirebaseAuth.addAuthStateListener(mAuthStateListener);
     }
 
+
     @Override
     protected void onPause() {
         super.onPause();
@@ -277,7 +239,7 @@ public class MainActivity extends AppCompatActivity {
             mFirebaseAuth.removeAuthStateListener(mAuthStateListener);
         }
         detachDatabaseReadListener();
-        mMessageAdapter.clear();
+        mUserAdapter.clear();
     }
 
     @Override
@@ -295,62 +257,5 @@ public class MainActivity extends AppCompatActivity {
             }
 
         }
-        else if(requestCode == RC_PHOTO_PICKER && resultCode == RESULT_OK)
-        {
-            Uri selectImageUri = data.getData();
-            StorageReference photoRef = mChatStoreageRef.child(selectImageUri.getLastPathSegment());
-
-            UploadTask uploadTask = photoRef.putFile(selectImageUri);
-            uploadTask.addOnSuccessListener(this, new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                @Override
-                public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                  Uri downloadPhotoUrl = taskSnapshot.getDownloadUrl();
-                    FriendlyMessage message = new FriendlyMessage(null, mUsername, downloadPhotoUrl.toString());
-                    mMessageDatabaseRef.push().setValue(message);
-                }
-            });
-        }
-    }
-
-    public void fetchConfig() {
-        long cacheExpiration = 0;
-        if (mFirebaseRemoteConfig.getInfo().getConfigSettings().isDeveloperModeEnabled()) {
-            cacheExpiration = 0;
-
-        }
-        mFirebaseRemoteConfig.fetch(cacheExpiration)
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid) {
-                        // Make the fetched config available
-                        // via FirebaseRemoteConfig get<type> calls, e.g., getLong, getString.
-                        mFirebaseRemoteConfig.activateFetched();
-
-                        // Update the EditText length limit with
-                        // the newly retrieved values from Remote Config.
-                        applyRetrievedLengthLimit();
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        // An error occurred when fetching the config.
-                        Log.w(TAG, "Error fetching config", e);
-
-                        // Update the EditText length limit with
-                        // the newly retrieved values from Remote Config.
-                        applyRetrievedLengthLimit();
-                    }
-                });
-    }
-
-    /**
-     * Apply retrieved length limit to edit text field. This result may be fresh from the server or it may be from
-     * cached values.
-     */
-    private void applyRetrievedLengthLimit() {
-        Long friendly_msg_length = mFirebaseRemoteConfig.getLong(FRIENDLY_MSG_LENGTH_KEY);
-        mMessageEditText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(friendly_msg_length.intValue())});
-        Log.d(TAG, FRIENDLY_MSG_LENGTH_KEY+" = "+friendly_msg_length);
     }
 }
