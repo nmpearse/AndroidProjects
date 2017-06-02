@@ -290,6 +290,7 @@ public class ChatActivity extends AppCompatActivity {
             StorageReference photoRef = mChatStoreageRef.child(selectImageUri.getLastPathSegment());
 
             UploadTask uploadTask = photoRef.putFile(selectImageUri);
+            ((ProgressBar)findViewById(R.id.photoProgressBar)).setVisibility(View.VISIBLE);
             uploadTask.addOnSuccessListener(this, new OnSuccessListener<UploadTask.TaskSnapshot>() {
                 @Override
                 public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
@@ -299,29 +300,36 @@ public class ChatActivity extends AppCompatActivity {
                     message.setFromUserID(Util.currentUser.getId());
                     message.setToUserID(selectedUser.getId());
                     mMessageDatabaseRef.push().setValue(message);
+                    ((ProgressBar)findViewById(R.id.photoProgressBar)).setVisibility(View.GONE);
                 }
             });
         }
     }
 
-
+    boolean zoomedIn = false;
+    ImageView expandedImageView;
+    Rect startBounds;
+    float startScaleFinal;
+    View thumbView;
     private void zoomImageFromThumb(final View thumbView, String photoURL) {
         // If there's an animation in progress, cancel it
         // immediately and proceed with this one.
+        zoomedIn = true;
         if (mCurrentAnimator != null) {
             mCurrentAnimator.cancel();
         }
-
+        this.thumbView = thumbView;
         // Load the high-resolution "zoomed-in" image.
-        final ImageView expandedImageView = (ImageView) findViewById(
+        expandedImageView = (ImageView) findViewById(
                 R.id.expanded_image);
         Glide.with(expandedImageView.getContext())
                 .load(photoURL)
+                .placeholder(R.drawable.progess_animation)
                 .into(expandedImageView);
 
         // Calculate the starting and ending bounds for the zoomed-in image.
         // This step involves lots of math. Yay, math.
-        final Rect startBounds = new Rect();
+        startBounds = new Rect();
         final Rect finalBounds = new Rect();
         final Point globalOffset = new Point();
 
@@ -400,7 +408,7 @@ public class ChatActivity extends AppCompatActivity {
         // Upon clicking the zoomed-in image, it should zoom back down
         // to the original bounds and show the thumbnail instead of
         // the expanded image.
-        final float startScaleFinal = startScale;
+       startScaleFinal = startScale;
         expandedImageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -441,7 +449,57 @@ public class ChatActivity extends AppCompatActivity {
                 });
                 set.start();
                 mCurrentAnimator = set;
+                zoomedIn = false;
             }
         });
+    }
+
+    @Override
+    public void onBackPressed() {
+
+        if(zoomedIn)
+        {
+            if (mCurrentAnimator != null) {
+                mCurrentAnimator.cancel();
+            }
+
+            // Animate the four positioning/sizing properties in parallel,
+            // back to their original values.
+            AnimatorSet set = new AnimatorSet();
+            set.play(ObjectAnimator
+                    .ofFloat(expandedImageView, View.X, startBounds.left))
+                    .with(ObjectAnimator
+                            .ofFloat(expandedImageView,
+                                    View.Y,startBounds.top))
+                    .with(ObjectAnimator
+                            .ofFloat(expandedImageView,
+                                    View.SCALE_X, startScaleFinal))
+                    .with(ObjectAnimator
+                            .ofFloat(expandedImageView,
+                                    View.SCALE_Y, startScaleFinal));
+            set.setDuration(mShortAnimationDuration);
+            set.setInterpolator(new DecelerateInterpolator());
+            set.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    thumbView.setAlpha(1f);
+                    expandedImageView.setVisibility(View.GONE);
+                    mCurrentAnimator = null;
+                }
+
+                @Override
+                public void onAnimationCancel(Animator animation) {
+                    thumbView.setAlpha(1f);
+                    expandedImageView.setVisibility(View.GONE);
+                    mCurrentAnimator = null;
+                }
+            });
+            set.start();
+            mCurrentAnimator = set;
+            zoomedIn = false;
+        }else
+        {
+            super.onBackPressed();
+        }
     }
 }

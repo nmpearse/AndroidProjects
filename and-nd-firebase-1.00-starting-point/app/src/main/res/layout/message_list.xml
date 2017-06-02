@@ -16,7 +16,7 @@
         android:id="@+id/messageListView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@+id/linearLayout"
+        android:layout_above="@+id/photoProgressBar"
         android:stackFromBottom="true"
         android:clickable="false"
         android:divider="@android:color/transparent"
@@ -24,7 +24,14 @@
         android:transcriptMode="alwaysScroll"
         tools:listitem="@layout/item_message"/>
 
-
+    <ProgressBar
+        android:id="@+id/photoProgressBar"
+        style="@style/Widget.AppCompat.ProgressBar"
+        android:layout_alignRight="@id/messageListView"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_above="@+id/linearLayout"
+        android:visibility="gone"/>
     <LinearLayout
         android:id="@+id/linearLayout"
         android:layout_width="match_parent"
@@ -69,5 +76,7 @@
         android:id="@+id/expanded_image"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:background="@android:drawable/screen_background_dark_transparent"
+        android:scaleType="center"
         android:visibility="invisible" />
 </RelativeLayout>
