@@ -23,6 +23,7 @@ import android.content.Intent;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
 
 import com.google.firebase.messaging.FirebaseMessagingService;
@@ -91,7 +92,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                 PendingIntent.FLAG_ONE_SHOT);
 
         Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)//.setGroup(title).setGroupSummary(true)
+        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this).setGroup("ABC").setGroupSummary(true)
                 .setSmallIcon(R.drawable.messenger_bubble_small_white).setColor(getResources().getColor(R.color.colorAccent))
                 .setContentTitle(title)
                 .setContentText(messageBody)
@@ -99,8 +100,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                 .setSound(defaultSoundUri)
                 .setContentIntent(pendingIntent);
 
-        NotificationManager notificationManager =
-                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(getApplicationContext());
 
         notificationManager.notify(Util.createID() /* ID of notification */, notificationBuilder.build());
     }
@@ -117,7 +117,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                 PendingIntent.FLAG_ONE_SHOT);
 
         Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)//.setGroup(title).setGroupSummary(true)
+        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this).setGroup("ABC").setGroupSummary(true)
                 .setSmallIcon(R.drawable.messenger_bubble_small_white).setColor(getResources().getColor(R.color.colorAccent))
                 .setContentTitle(title)
                 .setContentText(messageBody)
@@ -125,8 +125,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                 .setSound(defaultSoundUri)
                 .setContentIntent(pendingIntent);
 
-        NotificationManager notificationManager =
-                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(getApplicationContext());
 
         notificationManager.notify(Util.createID() /* ID of notification */, notificationBuilder.build());
     }
