@@ -12,6 +12,18 @@ import java.util.Map;
  */
 
 public class User implements Serializable{
+    public User(String id, String displayName, Uri photoUri, String emailID, Map<String, Boolean> friends, String fcmToken) {
+        this.id = id;
+        this.displayName = displayName;
+        this.photoUri = photoUri;
+        this.emailID = emailID;
+        this.friends = friends;
+        this.fcmToken = fcmToken;
+    }
+
+    public User() {
+    }
+
     public String getId() {
         return id;
     }
@@ -25,6 +37,16 @@ public class User implements Serializable{
     private Uri photoUri;
     private String emailID;
     private Map<String, Boolean> friends;
+
+    public String getFcmToken() {
+        return fcmToken;
+    }
+
+    public void setFcmToken(String fcmToken) {
+        this.fcmToken = fcmToken;
+    }
+
+    private String fcmToken;
 
     public String getDisplayName() {
         return displayName;

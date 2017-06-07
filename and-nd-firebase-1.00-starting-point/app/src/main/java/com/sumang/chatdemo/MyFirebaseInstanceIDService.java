@@ -33,5 +33,13 @@ public class MyFirebaseInstanceIDService extends FirebaseInstanceIdService {
      */
     private void sendRegistrationToServer(String token) {
         // TODO: Implement this method to send token to your app server.
+        // Add custom implementation, as needed.
+        //SharedPreferencesUtil.getInstance(getApplicationContext()).putString(getString(R.string.firebase_cloud_messaging_token), token);
+
+        // To implement: Only if user is registered, i.e. UserId is available in preference, update token on server.
+        String userId = SharedPreferencesUtil.getInstance(getApplicationContext()).getString("userID", "-1");
+        if(!userId.equals("-1")){
+            Util.updateFCMToken(getApplicationContext(), token);
+        }
     }
 }

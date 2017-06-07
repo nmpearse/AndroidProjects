@@ -134,7 +134,7 @@ public class ChatActivity extends AppCompatActivity {
         mFirebaseDatabase = FirebaseDatabase.getInstance();
         mFirebaseStorage = FirebaseStorage.getInstance();
         mMessageDatabaseRef = mFirebaseDatabase.getReference().child("chats");
-        //mMessageListQuery = mMessageDatabaseRef.orderByChild(Util.currentUser.getId()).equalTo(true);
+        //mMessageListQuery = mMessageDatabaseRef.orderByChild();
         mChatStoreageRef = mFirebaseStorage.getReference().child("chat_photos");
         // Initialize message ListView and its adapter
         List<FriendlyMessage> friendlyMessages = new ArrayList<>();
@@ -202,11 +202,6 @@ public class ChatActivity extends AppCompatActivity {
     }
 
 
-    private void onSignedOutCleanUp()
-    {
-        mUsername = ANONYMOUS;
-        mMessageAdapter.clear();
-    }
 
     private void attachDatabaseReadListener()
     {

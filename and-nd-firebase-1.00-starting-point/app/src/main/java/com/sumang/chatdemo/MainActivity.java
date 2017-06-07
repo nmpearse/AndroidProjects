@@ -47,6 +47,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
 import com.google.firebase.storage.FirebaseStorage;
@@ -106,15 +107,16 @@ public class MainActivity extends AppCompatActivity {
                 final FirebaseUser mFirebaseUser = firebaseAuth.getCurrentUser();
                 if(mFirebaseUser!=null)
                 {
-                    mUsersDatabaseRef.orderByChild("users").equalTo(mFirebaseUser.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
+                    mUsersDatabaseRef.orderByKey().equalTo(mFirebaseUser.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(DataSnapshot dataSnapshot) {
-                            setUserDetails(dataSnapshot.getValue(User.class), mFirebaseUser);
+                            setUserDetails(dataSnapshot.child(mFirebaseUser.getUid()).getValue(User.class), mFirebaseUser);
                         }
                         @Override
                         public void onCancelled(DatabaseError databaseError) {}
                     });
                     onSignedInInitialize(mFirebaseUser.getDisplayName());
+                    SharedPreferencesUtil.getInstance(getApplicationContext()).putString("userID", mFirebaseUser.getUid());
                 }
                 else
                 {
@@ -145,6 +147,7 @@ public class MainActivity extends AppCompatActivity {
             userDtls.setDisplayName(mFirebaseUser.getDisplayName());
             userDtls.setEmailID(mFirebaseUser.getEmail());
             userDtls.setId(mFirebaseUser.getUid());
+            userDtls.setFcmToken(FirebaseInstanceId.getInstance().getToken());
             mUsersDatabaseRef.child(mFirebaseUser.getUid()).setValue(userDtls);
         }else
         {
@@ -238,8 +241,8 @@ public class MainActivity extends AppCompatActivity {
         if(mAuthStateListener!=null) {
             mFirebaseAuth.removeAuthStateListener(mAuthStateListener);
         }
-        detachDatabaseReadListener();
-        mUserAdapter.clear();
+        //detachDatabaseReadListener();
+        //mUserAdapter.clear();
     }
 
     @Override
